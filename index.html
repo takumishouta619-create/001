@@ -4,6 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>เกมจับคู่สัตว์ในป่า - Jungle Memory Game</title>
+  
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
   <style>
     * {
       box-sizing: border-box;
@@ -11,9 +16,7 @@
       padding: 0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
-
     body {
-      /* พื้นหลังรูปป่าธรรมชาติ */
       background: linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.45)), 
                   url('https://images.unsplash.com/photo-1511497584788-8767611136f6?q=80&w=1600&auto=format&fit=crop') no-repeat center center fixed;
       background-size: cover;
@@ -24,20 +27,15 @@
       min-height: 100vh;
       padding: 20px;
     }
-
     h1 {
       margin-bottom: 15px;
       color: #72f238;
       text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8), 0 0 12px rgba(114, 242, 56, 0.6);
     }
-
-    /* Modal หน้าลงชื่อ */
     .modal-overlay {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
       background: rgba(0, 0, 0, 0.85);
       display: flex;
       justify-content: center;
@@ -45,7 +43,6 @@
       z-index: 1000;
       backdrop-filter: blur(8px);
     }
-
     .modal-content {
       background: rgba(20, 45, 20, 0.95);
       padding: 30px;
@@ -56,12 +53,7 @@
       max-width: 350px;
       width: 90%;
     }
-
-    .modal-content h2 {
-      margin-bottom: 15px;
-      color: #72f238;
-    }
-
+    .modal-content h2 { margin-bottom: 15px; color: #72f238; }
     .modal-content input {
       width: 100%;
       padding: 12px;
@@ -74,11 +66,7 @@
       text-align: center;
       outline: none;
     }
-
-    .modal-content input:focus {
-      border-color: #72f238;
-    }
-
+    .modal-content input:focus { border-color: #72f238; }
     .dashboard {
       display: flex;
       gap: 15px;
@@ -92,30 +80,10 @@
       justify-content: center;
       box-shadow: 0 4px 15px rgba(0,0,0,0.5);
     }
-
-    .stat-box {
-      text-align: center;
-      min-width: 90px;
-    }
-
-    .stat-box span {
-      display: block;
-      font-size: 0.8rem;
-      color: #ddd;
-    }
-
-    .stat-box div {
-      font-size: 1.1rem;
-      font-weight: bold;
-      color: #72f238;
-    }
-
-    .controls {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-
+    .stat-box { text-align: center; min-width: 90px; }
+    .stat-box span { display: block; font-size: 0.8rem; color: #ddd; }
+    .stat-box div { font-size: 1.1rem; font-weight: bold; color: #72f238; }
+    .controls { display: flex; gap: 10px; margin-bottom: 20px; }
     button {
       background: #72f238;
       color: #0d2008;
@@ -128,22 +96,13 @@
       transition: all 0.2s ease;
       box-shadow: 0 4px 10px rgba(0,0,0,0.3);
     }
-
-    button:hover {
-      background: #5cc22b;
-      transform: translateY(-2px);
-    }
-
+    button:hover { background: #5cc22b; transform: translateY(-2px); }
     button.secondary {
       background: rgba(255, 255, 255, 0.2);
       color: #fff;
       border: 1px solid rgba(255, 255, 255, 0.3);
     }
-
-    button.secondary:hover {
-      background: rgba(255, 255, 255, 0.3);
-    }
-
+    button.secondary:hover { background: rgba(255, 255, 255, 0.3); }
     .game-board {
       display: grid;
       grid-template-columns: repeat(4, 85px);
@@ -156,29 +115,18 @@
       border: 1px solid rgba(255, 255, 255, 0.1);
       box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
     }
-
     .card {
-      width: 85px;
-      height: 85px;
+      width: 85px; height: 85px;
       position: relative;
       transform-style: preserve-3d;
       transition: transform 0.5s;
       cursor: pointer;
     }
-
-    .card.flipped, .card.matched {
-      transform: rotateY(180deg);
-    }
-
-    .card.matched {
-      cursor: default;
-      opacity: 0.5;
-    }
-
+    .card.flipped, .card.matched { transform: rotateY(180deg); }
+    .card.matched { cursor: default; opacity: 0.5; }
     .card-face {
       position: absolute;
-      width: 100%;
-      height: 100%;
+      width: 100%; height: 100%;
       border-radius: 10px;
       display: flex;
       justify-content: center;
@@ -187,43 +135,26 @@
       backface-visibility: hidden;
       box-shadow: 0 4px 8px rgba(0,0,0,0.4);
     }
-
     .card-front {
       background: linear-gradient(135deg, #1e4620, #0d2008);
       border: 2px solid #3c8234;
       color: #72f238;
     }
-
-    .card-front::after {
-      content: "🌿";
-      font-size: 1.6rem;
-    }
-
+    .card-front::after { content: "🌿"; font-size: 1.6rem; }
     .card-back {
       background: #ffffff;
       border: 2px solid #72f238;
       transform: rotateY(180deg);
     }
-
     @media (max-width: 420px) {
-      .game-board {
-        grid-template-columns: repeat(4, 68px);
-        grid-gap: 8px;
-        padding: 10px;
-      }
-      .card {
-        width: 68px;
-        height: 68px;
-      }
-      .card-face {
-        font-size: 1.7rem;
-      }
+      .game-board { grid-template-columns: repeat(4, 68px); grid-gap: 8px; padding: 10px; }
+      .card { width: 68px; height: 68px; }
+      .card-face { font-size: 1.7rem; }
     }
   </style>
 </head>
 <body>
 
-  <!-- Modal ลงชื่อ -->
   <div class="modal-overlay" id="login-modal">
     <div class="modal-content">
       <h2>🌲 ยินดีต้อนรับสู่พงไพร 🦁</h2>
@@ -249,8 +180,8 @@
       <div id="moves">0</div>
     </div>
     <div class="stat-box">
-      <span>สถิติดีที่สุด</span>
-      <div id="best-score">--:-- (--)</div>
+      <span>สถิติดีที่สุด (Global)</span>
+      <div id="best-score">กำลังโหลด...</div>
     </div>
   </div>
 
@@ -262,15 +193,15 @@
   <div class="game-board" id="game-board"></div>
 
   <script>
-    // สัตว์ป่า 8 ชนิด
-    const animals = ['🦁', '🐯', '🐘', '🐒', '🦒', 'จ', '🦉', '🐍'];
-    // เปลี่ยนสัญลักษณ์ให้เป็นรูปสัตว์เต็มตัว
-    const jungleAnimals = ['🦁', '🐯', '🐘', '🐒', '🦒', 'บ', '🦉', '🐍'];
-    const cardsList = ['🦁', '🐯', '🐘', '🐒', '🦒', 'กบาล', '🦉', '🐍'];
+    // ตั้งค่า Firebase Database
+    const firebaseConfig = {
+      databaseURL: "https://ai001-a931d-default-rtdb.asia-southeast1.firebasedatabase.app"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
     const animalIcons = ['🦁', '🐯', '🐘', '🐒', '🦒', '🐊', '🦉', '🐍'];
-    
     let cards = [...animalIcons, ...animalIcons];
-    
     let currentPlayer = '';
     let flippedCards = [];
     let matchedPairs = 0;
@@ -296,14 +227,12 @@
         loginModal.style.display = 'none';
         resetGame();
       }
+      loadGlobalStats();
     };
 
     function startGameWithPlayer() {
       const name = playerNameInput.value.trim();
-      if (!name) {
-        alert('กรุณากรอกชื่อก่อนเล่นครับ');
-        return;
-      }
+      if (!name) { alert('กรุณากรอกชื่อก่อนเล่นครับ'); return; }
       currentPlayer = name;
       localStorage.setItem('jungle_memory_player', currentPlayer);
       playerDisplayElement.textContent = currentPlayer;
@@ -348,7 +277,6 @@
     function createBoard() {
       boardElement.innerHTML = '';
       const shuffledCards = shuffle([...cards]);
-
       shuffledCards.forEach((animal) => {
         const card = document.createElement('div');
         card.classList.add('card');
@@ -364,18 +292,14 @@
         card.appendChild(frontFace);
         card.appendChild(backFace);
         card.addEventListener('click', flipCard);
-
         boardElement.appendChild(card);
       });
-
-      loadStats();
+      loadGlobalStats();
     }
 
     function flipCard() {
       if (lockBoard || this.classList.contains('flipped') || this.classList.contains('matched')) return;
-
       startTimer();
-
       this.classList.add('flipped');
       flippedCards.push(this);
 
@@ -400,7 +324,7 @@
           stopTimer();
           setTimeout(() => {
             alert(`🎉 ยินดีด้วยคุณ ${currentPlayer}!\nคุณพบสัตว์ป่าทั้งหมดแล้ว\n⏱️ เวลาที่ใช้: ${formatTime(secondsElapsed)}\n🔄 จำนวนครั้ง: ${moves} ครั้ง`);
-            saveStats();
+            saveGlobalStats();
           }, 300);
         }
       } else {
@@ -414,35 +338,30 @@
       }
     }
 
-    function saveStats() {
-      const timeKey = `jungle_best_time_${currentPlayer}`;
-      const movesKey = `jungle_best_moves_${currentPlayer}`;
-
-      const bestTime = localStorage.getItem(timeKey);
-      const bestMoves = localStorage.getItem(movesKey);
-
-      if (!bestTime || secondsElapsed < parseInt(bestTime)) {
-        localStorage.setItem(timeKey, secondsElapsed);
-      }
-
-      if (!bestMoves || moves < parseInt(bestMoves)) {
-        localStorage.setItem(movesKey, moves);
-      }
-
-      loadStats();
+    // บันทึกสถิติลง Firebase Database
+    function saveGlobalStats() {
+      database.ref('leaderboard').push({
+        player: currentPlayer,
+        time: secondsElapsed,
+        moves: moves,
+        timestamp: Date.now()
+      }).then(() => {
+        loadGlobalStats();
+      });
     }
 
-    function loadStats() {
-      if (!currentPlayer) return;
-
-      const bestTime = localStorage.getItem(`jungle_best_time_${currentPlayer}`);
-      const bestMoves = localStorage.getItem(`jungle_best_moves_${currentPlayer}`);
-
-      if (bestTime && bestMoves) {
-        bestScoreElement.textContent = `${formatTime(parseInt(bestTime))} (${bestMoves}ครั้ง)`;
-      } else {
-        bestScoreElement.textContent = '--:-- (--)';
-      }
+    // โหลดสถิติที่ดีที่สุดของทุกคนมาแสดง
+    function loadGlobalStats() {
+      database.ref('leaderboard').orderByChild('time').limitToFirst(1).once('value', (snapshot) => {
+        if (snapshot.exists()) {
+          snapshot.forEach((childSnapshot) => {
+            const data = childSnapshot.val();
+            bestScoreElement.textContent = `${formatTime(data.time)} (${data.moves}ครั้ง) - ${data.player}`;
+          });
+        } else {
+          bestScoreElement.textContent = '--:-- (--)';
+        }
+      });
     }
 
     function resetGame() {
@@ -452,10 +371,8 @@
       matchedPairs = 0;
       flippedCards = [];
       lockBoard = false;
-
       timerElement.textContent = '00:00';
       movesElement.textContent = '0';
-
       createBoard();
     }
   </script>
